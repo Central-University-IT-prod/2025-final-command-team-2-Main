@@ -1,0 +1,1003 @@
+openapi: 3.0.3
+info:
+  title: Фильм на вечер API
+  description: API для приложения управления коллекциями фильмов
+  version: 1.0.0
+servers:
+  - url: /api
+    description: Основной API сервер
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        username:
+          type: string
+          example: "user123"
+        telegramId:
+          type: integer
+          format: int64
+          example: 123456789
+        avatarUrl:
+          type: string
+          example: "https://example.com/avatar.jpg"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2023-01-01T12:00:00Z"
+      required:
+        - id
+        - username
+        - telegramId
+        - avatarUrl
+        - createdAt
+    
+    Movie:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        title:
+          type: string
+          example: "Побег из Шоушенка"
+        description:
+          type: string
+          example: "Двое заключенных находят утешение и искупление через акты порядочности..."
+        image_url:
+          type: string
+          example: "https://example.com/movie.jpg"
+        image_base64:
+          type: string
+          nullable: true
+        rating:
+          type: number
+          format: float
+          example: 9.3
+        genre:
+          type: string
+          example: "Драма"
+        duration:
+          type: integer
+          example: 142
+        year:
+          type: integer
+          example: 1994
+        loaded_from_tmdb:
+          type: boolean
+          example: true
+      required:
+        - id
+        - title
+    
+    Collection:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "1"
+        name:
+          type: string
+          example: "Мои любимые фильмы"
+        description:
+          type: string
+          example: "Коллекция моих любимых фильмов"
+        isDefault:
+          type: boolean
+          example: false
+        isGroupCollection:
+          type: boolean
+          example: false
+        groupId:
+          type: string
+          nullable: true
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/CollectionUser'
+        movies:
+          type: array
+          items:
+            $ref: '#/components/schemas/MovieWithNotes'
+        createdAt:
+          type: string
+          format: date-time
+          example: "2023-01-01T12:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2023-01-01T12:00:00Z"
+      required:
+        - id
+        - name
+        - description
+        - isDefault
+        - createdAt
+        - updatedAt
+    
+    CollectionUser:
+      type: object
+      properties:
+        userId:
+          type: string
+          example: "1"
+        telegramId:
+          type: string
+          example: "123456789"
+        username:
+          type: string
+          example: "user123"
+        avatarUrl:
+          type: string
+          example: "https://example.com/avatar.jpg"
+        addedAt:
+          type: string
+          format: date-time
+          example: "2023-01-01T12:00:00Z"
+      required:
+        - userId
+        - telegramId
+        - username
+        - avatarUrl
+        - addedAt
+    
+    MovieWithNotes:
+      allOf:
+        - $ref: '#/components/schemas/Movie'
+        - type: object
+          properties:
+            notes:
+              type: string
+              nullable: true
+              example: "Отличный фильм, смотрел дважды"
+    
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 400
+        message:
+          type: string
+          example: "Неверные данные запроса"
+        details:
+          type: object
+          properties:
+            errors:
+              type: string
+              example: "Отсутствует обязательное поле: name"
+      required:
+        - code
+        - message
+    
+    TelegramAuthRequest:
+      type: object
+      properties:
+        telegramId:
+          type: integer
+          format: int64
+          example: 123456789
+        username:
+          type: string
+          example: "user123"
+        avatarUrl:
+          type: string
+          example: "https://example.com/avatar.jpg"
+      required:
+        - telegramId
+        - username
+    
+    TelegramAuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        isNewUser:
+          type: boolean
+          example: true
+        token:
+          type: string
+          example: "REDACTED..."
+      required:
+        - user
+        - isNewUser
+        - token
+    
+    MovieAddRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          example: "Побег из Шоушенка"
+        description:
+          type: string
+          example: "Двое заключенных находят утешение и искупление через акты порядочности..."
+          default: "null"
+        image_url:
+          type: string
+          example: "https://example.com/movie.jpg"
+          default: "null"
+        image_base64:
+          type: string
+          nullable: true
+        rating:
+          type: number
+          format: float
+          example: 9.3
+          default: -1
+        genre:
+          type: string
+          example: "Драма"
+          default: "null"
+        duration:
+          type: integer
+          example: 142
+          default: -1
+        year:
+          type: integer
+          example: 1994
+          default: -1
+        user_added:
+          type: boolean
+          example: false
+          default: false
+        loaded_from_tmdb:
+          type: boolean
+          example: false
+          default: false
+      required:
+        - title
+    
+    CreateCollectionRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Мои любимые фильмы"
+        description:
+          type: string
+          example: "Коллекция моих любимых фильмов"
+        isDefault:
+          type: boolean
+          example: false
+          default: false
+        initialUsers:
+          type: array
+          items:
+            $ref: '#/components/schemas/CollectionUserRequest'
+          default: []
+      required:
+        - name
+        - description
+    
+    CollectionUserRequest:
+      type: object
+      properties:
+        telegramId:
+          type: integer
+          format: int64
+          example: 123456789
+      required:
+        - telegramId
+    
+    AddMovieRequest:
+      type: object
+      properties:
+        movieId:
+          type: integer
+          format: int64
+          example: 1
+        notes:
+          type: string
+          nullable: true
+          example: "Отличный фильм, смотрел дважды"
+      required:
+        - movieId
+    
+    SearchRequest:
+      type: object
+      properties:
+        query:
+          type: string
+          example: "Шоушенк"
+        page:
+          type: integer
+          example: 1
+          default: 1
+      required:
+        - query
+    
+    AISearchRequest:
+      type: object
+      properties:
+        query:
+          type: string
+          example: "Фильм о побеге из тюрьмы"
+      required:
+        - query
+    
+    AISearchResponse:
+      type: object
+      properties:
+        film_name:
+          type: string
+          example: "Побег из Шоушенка"
+      required:
+        - film_name
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Аутентификация
+    description: Операции, связанные с аутентификацией пользователей
+  - name: Фильмы
+    description: Операции с фильмами
+  - name: Коллекции
+    description: Операции с коллекциями фильмов
+  - name: Пользователи коллекций
+    description: Управление пользователями в коллекциях
+  - name: Фильмы в коллекциях
+    description: Управление фильмами в коллекциях
+  - name: Поиск
+    description: Поиск фильмов
+
+paths:
+  # ===== АУТЕНТИФИКАЦИЯ =====
+  /auth/telegram:
+    post:
+      tags:
+        - Аутентификация
+      summary: Аутентификация через Telegram
+      description: Аутентификация пользователя с помощью учетных данных Telegram
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TelegramAuthRequest'
+      responses:
+        '200':
+          description: Успешная аутентификация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelegramAuthResponse'
+        '400':
+          description: Неверный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  # ===== ФИЛЬМЫ =====
+  /movies/:
+    get:
+      tags:
+        - Фильмы
+      summary: Получить все фильмы
+      description: Получить все фильмы из базы данных
+      responses:
+        '200':
+          description: Список фильмов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Movie'
+    
+    post:
+      tags:
+        - Фильмы
+      summary: Добавить новый фильм
+      description: Добавить новый фильм в базу данных
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MovieAddRequest'
+      responses:
+        '200':
+          description: Фильм успешно добавлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movie'
+        '400':
+          description: Неверный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /movies/{movieId}:
+    parameters:
+      - name: movieId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: Идентификатор фильма
+    
+    get:
+      tags:
+        - Фильмы
+      summary: Получить фильм по ID
+      description: Получить конкретный фильм по его идентификатору
+      responses:
+        '200':
+          description: Детали фильма
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movie'
+        '404':
+          description: Фильм не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    put:
+      tags:
+        - Фильмы
+      summary: Обновить фильм
+      description: Обновить существующий фильм
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MovieAddRequest'
+      responses:
+        '200':
+          description: Фильм успешно обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movie'
+        '400':
+          description: Неверный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Фильм не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    delete:
+      tags:
+        - Фильмы
+      summary: Удалить фильм
+      description: Удалить фильм по его идентификатору
+      responses:
+        '203':
+          description: Фильм успешно удален
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: "success"
+        '404':
+          description: Фильм не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  # ===== КОЛЛЕКЦИИ =====
+  /collections/:
+    get:
+      tags:
+        - Коллекции
+      summary: Получить коллекции пользователя
+      description: Получить все коллекции для аутентифицированного пользователя
+      responses:
+        '200':
+          description: Список коллекций
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Collection'
+    
+    post:
+      tags:
+        - Коллекции
+      summary: Создать новую коллекцию
+      description: Создать новую коллекцию для аутентифицированного пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCollectionRequest'
+      responses:
+        '200':
+          description: Коллекция успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+        '400':
+          description: Неверный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Доступ запрещен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /collections/{collectionId}:
+    parameters:
+      - name: collectionId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: Идентификатор коллекции
+    
+    get:
+      tags:
+        - Коллекции
+      summary: Получить коллекцию по ID
+      description: Получить конкретную коллекцию по её идентификатору
+      responses:
+        '200':
+          description: Детали коллекции
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+        '403':
+          description: Доступ запрещен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Коллекция не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    put:
+      tags:
+        - Коллекции
+      summary: Обновить коллекцию
+      description: Обновить существующую коллекцию
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCollectionRequest'
+      responses:
+        '200':
+          description: Коллекция успешно обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+        '400':
+          description: Неверный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Доступ запрещен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Коллекция не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    delete:
+      tags:
+        - Коллекции
+      summary: Удалить коллекцию
+      description: Удалить коллекцию по её идентификатору
+      responses:
+        '200':
+          description: Коллекция успешно удалена
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: "success"
+        '403':
+          description: Доступ запрещен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Коллекция не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  # ===== ФИЛЬМЫ В КОЛЛЕКЦИЯХ =====
+  /collections/{collectionId}/movies:
+    parameters:
+      - name: collectionId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: Идентификатор коллекции
+    
+    post:
+      tags:
+        - Фильмы в коллекциях
+      summary: Добавить фильм в коллекцию
+      description: Добавить фильм в конкретную коллекцию
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddMovieRequest'
+      responses:
+        '200':
+          description: Фильм успешно добавлен в коллекцию
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+        '400':
+          description: Неверный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Доступ запрещен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Коллекция или фильм не найдены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /collections/{collectionId}/movies/{movieId}:
+    parameters:
+      - name: collectionId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: Идентификатор коллекции
+      - name: movieId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: Идентификатор фильма
+    
+    delete:
+      tags:
+        - Фильмы в коллекциях
+      summary: Удалить фильм из коллекции
+      description: Удалить фильм из конкретной коллекции
+      responses:
+        '200':
+          description: Фильм успешно удален из коллекции
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+        '403':
+          description: Доступ запрещен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Коллекция или фильм не найдены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    put:
+      tags:
+        - Фильмы в коллекциях
+      summary: Обновить заметки к фильму в коллекции
+      description: Обновить заметки к фильму в конкретной коллекции
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes:
+                  type: string
+                  example: "Отличный фильм, смотрел дважды"
+              required:
+                - notes
+      responses:
+        '200':
+          description: Заметки к фильму успешно обновлены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+        '400':
+          description: Неверный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Доступ запрещен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Коллекция или фильм не найдены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /collections/{collectionId}/random:
+    parameters:
+      - name: collectionId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: Идентификатор коллекции
+    
+    get:
+      tags:
+        - Фильмы в коллекциях
+      summary: Получить случайный фильм из коллекции
+      description: Получить случайный фильм из конкретной коллекции
+      responses:
+        '200':
+          description: Случайный фильм из коллекции
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieWithNotes'
+        '403':
+          description: Доступ запрещен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Коллекция не найдена или пуста
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  # ===== ПОЛЬЗОВАТЕЛИ КОЛЛЕКЦИЙ =====
+  /collections/{collectionId}/users:
+    parameters:
+      - name: collectionId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: Идентификатор коллекции
+    
+    get:
+      tags:
+        - Пользователи коллекций
+      summary: Получить пользователей коллекции
+      description: Получить всех пользователей конкретной коллекции
+      responses:
+        '200':
+          description: Список пользователей в коллекции
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CollectionUser'
+        '403':
+          description: Доступ запрещен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Коллекция не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    post:
+      tags:
+        - Пользователи коллекций
+      summary: Добавить пользователя в коллекцию
+      description: Добавить пользователя в конкретную коллекцию
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectionUserRequest'
+      responses:
+        '200':
+          description: Пользователь успешно добавлен в коллекцию
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+        '400':
+          description: Неверный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Доступ запрещен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Коллекция или пользователь не найдены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /collections/{collectionId}/users/{userTelegramId}:
+    parameters:
+      - name: collectionId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: Идентификатор коллекции
+      - name: userTelegramId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: Telegram ID пользователя
+    
+    delete:
+      tags:
+        - Пользователи коллекций
+      summary: Удалить пользователя из коллекции
+      description: Удалить пользователя из конкретной коллекции
+      responses:
+        '200':
+          description: Пользователь успешно удален из коллекции
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+        '403':
+          description: Доступ запрещен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Коллекция или пользователь не найдены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  # ===== ПОИСК =====
+  /movie/search:
+    post:
+      tags:
+        - Поиск
+      summary: Поиск фильмов
+      description: Поиск фильмов по названию или другим критериям
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchRequest'
+      responses:
+        '200':
+          description: Результаты поиска
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Movie'
+        '400':
+          description: Неверный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /movie/search/ai:
+    post:
+      tags:
+        - Поиск
+      summary: Поиск фильмов с помощью ИИ
+      description: Поиск фильмов с использованием обработки естественного языка
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AISearchRequest'
+      responses:
+        '200':
+          description: Результат поиска с помощью ИИ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AISearchResponse'
+        '400':
+          description: Неверный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
